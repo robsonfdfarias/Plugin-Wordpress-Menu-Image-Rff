@@ -15,11 +15,15 @@ if(!defined('WPINC')){
 function mi_rff_menuImage($atts){
     $dados = menuImage_rff_recuperar_dados();
     if($dados){
-        echo '<div>';
+        $content = '';
+        $content .= '<div class="mi-rff-container">';
         foreach($dados as $dado){
-            echo '<div><a href="'.$dados->urlLink.'"><img src="'.$dados->urlImg.'" alt="'.$dados->altText.'"></a></div>';
+            $content .= '<img src="'.$dado->urlImg.'" alt="'.$dado->altText.'" title="'.$dado->altText.'" class="imgMenu" onclick="window.location.href=\''.$dado->urlLink.'\'">';
         }
-        echo '</div>';
+        $content .= '</div>';
+        return $content;
+    }else{
+        return 'Sem menu';
     }
 }
 

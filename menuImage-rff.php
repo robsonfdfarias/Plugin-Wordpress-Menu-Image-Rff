@@ -9,18 +9,19 @@ Email: robsonfdfarias@gmail.com
 Author URI:  http://infocomrobson.com.br
 License:     GPL2
 */
-//antigo nome da pasta meu-plugin
+
  //se chamar diretamente e não pelo wordpress, aborta
  if(!defined('WPINC')){
     die();
  }
 
 define('MI_RFF_CORE_INC', dirname(__FILE__).'/inc/');//caminho dos arquios php
+define('MI_RFF_DIR_IMG', dirname(__FILE__).'/img/');
 define('MI_RFF_URL_CSS', plugins_url('css/', __FILE__));// Caminho absoluto para o diretório do plugin
-define('MI_RFF_DIR_IMG', dirname(__FILE__).'/img/');// Caminho absoluto para o diretório do plugin
+define('MI_RFF_URL_JS', plugins_url('js/', __FILE__));
 
  /***
-  * Registrando o css (frontend)
+  * Registrando o css (Backend)
   */
   function mi_rff_register_css(){
     wp_enqueue_style('mi-rff-css', MI_RFF_URL_CSS.'mi-rff.css', null, time(), 'all');
@@ -28,6 +29,28 @@ define('MI_RFF_DIR_IMG', dirname(__FILE__).'/img/');// Caminho absoluto para o d
 
  add_action('admin_enqueue_scripts', 'mi_rff_register_css');
  
+ /***
+  * Registrando o css (frontend)
+  */
+  function mi_rff_register_css_core(){
+    wp_enqueue_style('mi-rff-css-core', MI_RFF_URL_CSS.'mi-rff-core.css', null, time(), 'all');
+ }
+
+ add_action('wp_enqueue_scripts', 'mi_rff_register_css_core');
+ 
+ /***
+  * Registrando o js (frontend)
+  */
+function mi_rff_register_core_js(){
+    if(!did_action('wp_enqueue_media')){
+        wp_enqueue_media();
+    }
+    wp_enqueue_script('mi-rff-js-core', MI_RFF_URL_JS.'mi-rff-core.js', 'jquery', time(), true);
+ }
+
+ add_action('wp_enqueue_scripts', 'mi_rff_register_core_js');
+ add_action('admin_enqueue_scripts', 'mi_rff_register_core_js');
+
 /***
   * includes 
   */
@@ -80,7 +103,7 @@ function menuImage_rff_add_admin_menu() {
         'manage_options', // Capacidade
         'menu-image', // Slug
         'menuImage_rff_admin_page', // Função
-        'dashicons-admin-generic', // Ícone
+        'dashicons-welcome-widgets-menus', // Ícone
         6 // Posição
     );
 }
