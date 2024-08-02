@@ -60,39 +60,26 @@ if(file_exists( MI_RFF_CORE_INC.'mi-rff-shortcode.php' )){
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-functions.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-functions.php' );
 }
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-hook.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-hook.php' );
+}
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-functions-class.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-functions-class.php' );
+}
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-upload-image.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-upload-image.php' );
+}
 
+$connection_mi_rff = new MiRffConection();
+$upload_mi_rff = new MiRffUpload();
 
+//Instala a tabela na ativação do plugin e desinstala a tabela na desativação
 register_activation_hook(__FILE__, 'menuImage_rff_install');
 register_deactivation_hook(__FILE__, 'menuImage_rff_uninstall');
+// Registrar tipos e campos no GraphQL
+add_action( 'graphql_register_types', 'register_custom_table_in_graphql' );
 
-//Cria a tabela na ativação do plugin
-function menuImage_rff_install() {
-    global $wpdb;
-    // $table_name = $wpdb->prefix . 'meu_plugin_table';
-    $table_name = $wpdb->prefix . 'menuImage_rff';
-    
-    $charset_collate = $wpdb->get_charset_collate();
-    
-    $sql = "CREATE TABLE $table_name (
-        id mediumint(9) NOT NULL AUTO_INCREMENT,
-        nome varchar(200),
-        urlImg varchar(150) NOT NULL,
-        urlLink varchar(150) NOT NULL,
-        altText varchar(255),
-        PRIMARY KEY  (id)
-    ) $charset_collate;";
-    
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
-}
-//Apaga a tabela ao desativar o plugin
-function menuImage_rff_uninstall() {
-    global $wpdb;
-    // $table_name = $wpdb->prefix . 'meu_plugin_table';
-    $table_name = $wpdb->prefix . 'menuImage_rff';
-    $sql = "DROP TABLE IF EXISTS $table_name;";
-    $wpdb->query($sql);
-}
+
 //////////////////////////////////////////////////
 //Adicionar Menu na Área Administrativa
 add_action('admin_menu', 'menuImage_rff_add_admin_menu');
@@ -109,6 +96,8 @@ function menuImage_rff_add_admin_menu() {
 }
 
 function menuImage_rff_admin_page() {
+    global $connection_mi_rff;
+    global $upload_mi_rff;
     ?>
     <div class="wrap">
         <h1>Configuração do Menu Imagem RFF </h1>
@@ -124,7 +113,7 @@ function menuImage_rff_admin_page() {
     <?php
     if(isset($_POST['Editar']) && isset($_POST['id']) && isset($_POST['nome']) && isset($_POST['urlImg']) && isset($_POST['urlLink']) && isset($_POST['altText'])){
         if($_POST['id']!='' && $_POST['nome']!='' && $_POST['urlImg']!='' && $_POST['urlLink']!='' && $_POST['altText']!=''){
-            menuImage_rff_editar_dados($_POST['id'], $_POST['nome'], $_POST['urlImg'], $_POST['urlLink'], $_POST['altText']);
+            $connection_mi_rff->menuImage_rff_editar_dados($_POST['id'], $_POST['nome'], $_POST['urlImg'], $_POST['urlLink'], $_POST['altText']);
             echo '<div class="notice notice-success is-dismissible"><p>Dados alterados com sucesso!</p></div>';
         }else{
             echo '<div class="notice notice-failure is-dismissible"><p>Todos os campos precisam ser preenchidos!</p></div>';
@@ -136,26 +125,26 @@ function menuImage_rff_admin_page() {
             $urlLink = sanitize_text_field($_POST['urlLink']);
             $altText = sanitize_text_field($_POST['altText']);
             // printf($urlImg);
-            $image = uploadImage($urlImg);
+            $image = $upload_mi_rff->uploadImage($urlImg);
             // echo '//-----------------------------------//<br>';
             // echo $image;
             // echo '<br>........................................';
             // menuImage_rff_gravar_dados($nome, $urlImg, $urlLink, $altText);
-            menuImage_rff_gravar_dados($nome, $image, $urlLink, $altText);
+            $connection_mi_rff->menuImage_rff_gravar_dados($nome, $image, $urlLink, $altText);
             echo '<div class="notice notice-success is-dismissible"><p>Dados gravados com sucesso!</p></div>';
         }else{
             echo '<div class="notice notice-failure is-dismissible"><p>Todos os campos precisam ser preenchidos!</p></div>';
         }
     }else if(isset($_POST['Excluir']) && isset($_POST['id'])){
         if($_POST['id']!=''){
-            menuImage_rff_excluir_dados($_POST['id'], $_POST['urlImg']);
+            $connection_mi_rff->menuImage_rff_excluir_dados($_POST['id'], $_POST['urlImg']);
             echo '<div class="notice notice-success is-dismissible"><p>Registro excluído com sucesso!</p></div>';
         }else{
             echo '<div class="notice notice-failure is-dismissible"><p>Não foi possível excluir o registro!</p></div>';
         }
     }
     //mostra os dados gravados
-    $dados = menuImage_rff_recuperar_dados();
+    $dados = $connection_mi_rff->menuImage_rff_recuperar_dados();
     if ($dados) {
         // echo '<img src="'.$dados[0]->urlImg.'" width="100">';
         echo '<h2>Dados Gravados</h2>';
@@ -181,94 +170,3 @@ function menuImage_rff_admin_page() {
         echo '<p>Nenhum dado encontrado.</p>';
     }
 }
-
-
-// Registrar tipos e campos no GraphQL
-add_action( 'graphql_register_types', 'register_custom_table_in_graphql' );
-
-function register_custom_table_in_graphql() {
-    register_graphql_object_type( 'CustomTableType', [
-        'description' => __( 'Tabela de menu com imagem', 'your-textdomain' ),
-        'fields' => [
-            'id' => [
-                'type' => 'ID',
-                'description' => __( 'ID of the item', 'your-textdomain' ),
-            ],
-            'nome' => [
-                'type' => 'String',
-                'description' => __( 'Nome do item do menu image', 'your-textdomain' ),
-            ],
-            'urlImg' => [
-                'type' => 'String',
-                'description' => __( 'Url da image do item do menu image', 'your-textdomain' ),
-            ],
-            'urlLink' => [
-                'type' => 'String',
-                'description' => __( 'Url do link do item do menu image', 'your-textdomain' ),
-            ],
-            'altText' => [
-                'type' => 'String',
-                'description' => __( 'Texto alternativo do item do menu image', 'your-textdomain' ),
-            ],
-        ],
-    ] );
-
-    register_graphql_field( 'RootQuery', 'menuImage_rff', [
-        'type' => [ 'list_of' => 'CustomTableType' ],
-        'description' => __( 'Query de consulta da tabela', 'your-textdomain' ),
-        'resolve' => function( $root, $args, $context, $info ) {
-            global $wpdb;
-            // $table_name = $wpdb->prefix . 'custom_table';
-            $table_name = $wpdb->prefix . 'menuImage_rff';
-            $results = $wpdb->get_results( "SELECT * FROM $table_name" );
-            return $results;
-        }
-    ] );
-}
-
-function uploadImage($file){
-    // $uploadedfile = $_FILES['meu_plugin_image_upload'];
-    $uploadedfile = $file;
-
-    // Defina o diretório de destino para a pasta 'img' dentro do diretório do plugin
-    $plugin_dir = plugin_dir_path(__FILE__); // Caminho absoluto para o diretório do plugin
-    $upload_dir = $plugin_dir . 'img/'; // Diretório de upload
-    $urlBase = plugins_url('img/', __FILE__);
-    
-    // Verifica se o diretório existe; caso contrário, tenta criar
-    if (!file_exists($upload_dir)) {
-        wp_mkdir_p($upload_dir);
-    }
-
-    // Verifica o tipo de arquivo e o tamanho, se necessário
-    $file_type = wp_check_filetype($uploadedfile['name']);
-    if ($file_type['ext'] !== 'jpg' && $file_type['ext'] !== 'jpeg' && $file_type['ext'] !== 'png' && $file_type['ext'] !== 'gif') {
-        echo "<p>Tipo de arquivo não permitido. Apenas imagens JPG, JPEG, PNG e GIF são permitidas.</p>";
-        return;
-    }
-
-    $upload_overrides = array('test_form' => false, 'move_uploaded_file' => true);
-
-    // Move o arquivo carregado para o diretório de upload
-    $movefile = wp_handle_upload($uploadedfile, $upload_overrides);
-    if ($movefile && !isset($movefile['error'])) {
-        // $new_file_path = $upload_dir . basename($movefile['file']); // Caminho final do arquivo
-        $arqNameG = basename($movefile['file']);
-        $partes = explode('.', $arqNameG);
-        $newName = $partes[0].time().'.'.$partes[1];
-        // echo '<h1>Novo nome do arquivo: '.$newName.'</h1>';
-        $new_file_path = $upload_dir . $newName; // Caminho final do arquivo
-        if (rename($movefile['file'], $new_file_path)) {
-            // echo "<p>Arquivo carregado com sucesso: <a href='" . plugins_url('img/' . basename($new_file_path), __FILE__) . "'>" . basename($new_file_path) . "</a></p>";
-            return $urlBase.basename($new_file_path);
-        } else {
-            echo "<p>Erro ao mover o arquivo para o diretório de destino.</p>";
-        }
-    } else {
-        echo "<p>Erro ao carregar arquivo: {$movefile['error']}</p>";
-    }
-    return null;
-}
-
-// https://wordpress.jaraguadosul.sc.gov.br/wp-content/plugins/menuImage-rff/img/arte-2.png
-// https://wordpress.jaraguadosul.sc.gov.br/wp-content/plugins/menuImage-rff/img/arte.png
