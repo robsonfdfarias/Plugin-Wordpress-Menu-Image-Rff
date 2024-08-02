@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Este arquivo contém as funções de CRUD
+ * Este arquivo contém a classe de upload da imagem
  */
 
 //se chamar diretamente e não pelo wordpress, aborta

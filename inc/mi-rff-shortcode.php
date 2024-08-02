@@ -9,11 +9,17 @@ if(!defined('WPINC')){
     die();
  }
 
- if(file_exists( MI_RFF_CORE_INC.'mi-rff-functions.php' )){
-    require_once( MI_RFF_CORE_INC.'mi-rff-functions.php' );
+
+ if(file_exists( MI_RFF_CORE_INC.'mi-rff-functions-class.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-functions-class.php' );
 }
+
+$connection_mi_rff = new MiRffConection();
+
+
 function mi_rff_menuImage($atts){
-    $dados = menuImage_rff_recuperar_dados();
+    global $connection_mi_rff;
+    $dados = $connection_mi_rff->menuImage_rff_recuperar_dados();
     if($dados){
         $content = '';
         $content .= '<div class="mi-rff-container">';

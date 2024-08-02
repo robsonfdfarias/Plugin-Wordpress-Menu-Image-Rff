@@ -6,3 +6,23 @@
     max-width: 100px;
     max-height: 100px;
 }
+
+#mi_rff_form {
+    display: ruby;
+}
+#mi_rff_form span input[type="file"]{
+    display: none;
+}
+
+#mi_rff_form span label {
+    padding: 10px 20px;
+    background-color: #8bc9a5;
+    color: #000000;
+    text-transform: uppercase;
+    text-align: center;
+    display: block;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: -5px;
+}
