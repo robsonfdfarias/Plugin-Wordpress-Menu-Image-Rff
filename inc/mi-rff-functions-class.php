@@ -16,11 +16,41 @@ if(file_exists( MI_RFF_CORE_INC.'mi-rff-upload-image.php' )){
 
 $mi_rff_upload = new MiRffUpload();
 
+$table_location_mi_rff = $wpdb->prefix . 'menuImage_rff_location';
 class MiRffConection {
     function __construct(){}
 
+    function save_location($title, $statusItem){
+        global $wpdb;
+        global $table_location_mi_rff;
+        $result = $wpdb->insert(
+            $table_location_mi_rff,
+            array(
+                'title'=>$title,
+                'statusItem'=>$statusItem,
+            )
+        );
+        if($result>0){
+            echo '<div class="notice notice-success is-dismissible"><p>Localização inserida com sucesso!</p></div>';
+        }else{
+            echo '<div class="notice notice-failure is-dismissible"><p>Falha ao inserir a localização! Erro: '.$wpdb->last_error.'</p></div>';
+        }
+    }
+
+    function get_all_locations(){
+        global $wpdb;
+        global $table_location_mi_rff;
+        $results = $wpdb->get_results("SELECT * FROM $table_location_mi_rff");
+        return $results;
+    }
+
+
+    /**
+     * Aqui começa a tabela de itens
+     */
+
     //Grava os dados na tabela
-    function menuImage_rff_gravar_dados($orderItems, $nome, $urlImg, $urlLink, $altText, $statusItem) {
+    function menuImage_rff_gravar_dados($orderItems, $nome, $urlImg, $urlLink, $altText, $statusItem, $locationId) {
         global $wpdb;
         // $table_name = $wpdb->prefix . 'meu_plugin_table';
         $table_name = $wpdb->prefix . 'menuImage_rff';
@@ -34,6 +64,7 @@ class MiRffConection {
                 'urlLink' => $urlLink,
                 'altText' => $altText,
                 'statusItem' => $statusItem,
+                'locationId' => $locationId,
             )
         );
     }
@@ -64,7 +95,7 @@ class MiRffConection {
     }
 
     //editar o registro
-    function menuImage_rff_editar_dados($id, $orderItems, $nome, $urlImg, $urlLink, $altText, $statusItem) {
+    function menuImage_rff_editar_dados($id, $orderItems, $nome, $urlImg, $urlLink, $altText, $statusItem, $locationId) {
         global $wpdb;
         // $table_name = $wpdb->prefix . 'meu_plugin_table';
         $table_name = $wpdb->prefix . 'menuImage_rff';
@@ -78,6 +109,7 @@ class MiRffConection {
                 'urlLink' => $urlLink,
                 'altText' => $altText,
                 'statusItem' => $statusItem,
+                'locationId' => $locationId,
             ),
             array('id' => $id), // Condição para atualizar (WHERE id = $id)
             array('%s'), // Tipo de dado dos valores novos (%s indica que o valor é uma string)

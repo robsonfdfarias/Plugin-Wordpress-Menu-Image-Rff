@@ -15,14 +15,79 @@
 }
 
 #mi_rff_form span label {
-    padding: 10px 20px;
+    padding: 4px 20px;
     background-color: #8bc9a5;
     color: #000000;
     text-transform: uppercase;
     text-align: center;
     display: block;
-    margin-top: 10px;
+    margin-top: -3px;
     cursor: pointer;
     border-radius: 5px;
-    margin-top: -5px;
+}
+
+#mi_rff_form input[type="text"]{
+    margin-top: 3px;
+    margin-bottom: 3px;
+}
+
+@media (max-width:473px){
+    #mi_rff_form span label {
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+}
+
+.mi_rff_geral {
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    position: fixed;
+    left:0;
+    top: 0;
+    z-index: 10001;
+    align-content: center;
+    display: none;
+}
+
+.mi_rff_insert_item{
+    max-width: 1000px;
+    background-color: #fff;
+    margin: auto auto;
+    padding: 30px;
+    line-height: 2rem;
+    border-radius: 5px;
+    position: relative;
+}
+
+.mi_rff_btclose{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 5px 15px;
+    background-color: #8bc9a5;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all ease-in 0.2s;
+}
+.mi_rff_btclose:hover{
+    background-color: #78f8ae;
+    transition: all ease-in 0.2s;
+}
+
+.mi_rff_bt_open{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 10px 15px;
+    background-color: #8bc9a5;
+    border-radius: 4px;
+    font-size: 1.0rem;
+    cursor: pointer;
+    transition: all ease-in 0.2s;
+}
+.mi_rff_bt_open:hover{
+    background-color: #78f8ae;
+    transition: all ease-in 0.2s;
 }

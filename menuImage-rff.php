@@ -3,7 +3,7 @@
 Plugin Name: Menu Image RFF
 Plugin URI:  http://exemplo.com
 Description: Cria um menu com imagens
-Version:     2.0
+Version:     3.0
 Author:      Robson Ferreira de Farias
 Email: robsonfdfarias@gmail.com
 Author URI:  http://infocomrobson.com.br
@@ -28,6 +28,18 @@ define('MI_RFF_URL_JS', plugins_url('js/', __FILE__));
  }
 
  add_action('admin_enqueue_scripts', 'mi_rff_register_css');
+
+ /***
+  * Registrando o js (backend)
+  */
+function mi_rff_register_admin_js(){
+    if(!did_action('wp_enqueue_media')){
+        wp_enqueue_media();
+    }
+    wp_enqueue_script('mi-rff-js-admin', MI_RFF_URL_JS.'mi-rff-admin.js', 'jquery', time(), true);
+ }
+ add_action('admin_enqueue_scripts', 'mi_rff_register_admin_js');
+ 
  
  /***
   * Registrando o css (frontend)
@@ -49,7 +61,7 @@ function mi_rff_register_core_js(){
  }
 
  add_action('wp_enqueue_scripts', 'mi_rff_register_core_js');
- add_action('admin_enqueue_scripts', 'mi_rff_register_core_js');
+
 
 /***
   * includes 
@@ -59,6 +71,9 @@ if(file_exists( MI_RFF_CORE_INC.'mi-rff-shortcode.php' )){
 }
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-hook.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-hook.php' );
+}
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-graphql.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-graphql.php' );
 }
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-functions-class.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-functions-class.php' );
@@ -97,25 +112,86 @@ function menuImage_rff_admin_page() {
     global $upload_mi_rff;
     // $connection_mi_rff->restoreData();
     $style_select = "padding: 5px 15px; padding-right: 20px; font-weight: bold; text-transform: uppercase; margin-top:-5px;";
+    //
     ?>
-    <div class="wrap">
+    <div class="wrap" style="position:relative;">
         <h1>Configuração do Menu Imagem RFF </h1>
-        <form method="post" action="" id="mi_rff_form" enctype="multipart/form-data">
-            <input type="text" name="orderItems" size="5" placeholder="Digite a ordem que ele deve aparecer" value="" title="Digite a ordem que ele deve aparecer">
-            <input type="text" name="nome" placeholder="Digite o nome" value="">
-            <!-- <input type="text" name="urlImg" placeholder="Digite a url da imagem" value=""> -->
-            <span>
-                <label for="urlImg">Selecionar arquivo</label>
-                <input type="file" name="urlImg" id="urlImg" accept="image/*">
-            </span>
-            <input type="text" name="urlLink" placeholder="Digite a url do link" value="">
-            <input type="text" name="altText" placeholder="Digite o texto que deve aparecer ao passar o mouse por cima da imagem" title="Digite o texto que deve aparecer ao passar o mouse por cima da imagem" value="">
-            <select name="statusItem" id="statusItem" style="<?php echo $style_select; ?>">
-                <option value="Ativo">Ativo</option>
-                <option value="Inativo">Inativo</option>
-            </select>
-            <input type="submit" class="mi-rff-bt-submit" id="Enviar" name="Enviar" value="Enviar">
-        </form>
+        <h3>Locais cadastrados</h3>
+        <div class="mi_rff_bt_open" id="mi_rff_bt_open_cad_location">Cadastrar uma localização</div>
+        <div class="mi_rff_geral" id="mi_rff_geral_insert_location">
+            <div class="mi_rff_insert_item">
+                <h1>Cadastrar item</h1>
+                <div class="mi_rff_btclose" id="mi_rff_btclose_cad_location" title="Fechar a janela">X</div>
+                <form method="post" action="" id="mi_rff_form" enctype="multipart/form-data">
+                    <input type="text" name="mi_rff_title" placeholder="Digite o título" value="" required>
+                    <select name="statusItem" id="statusItem" style="<?php echo $style_select; ?>" required>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
+                    <input type="submit" class="mi-rff-bt-submit" id="cadastrar_location" name="cadastrar_location" value="Cadastrar">
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php
+        if(isset($_POST['cadastrar_location'])){
+            $title = sanitize_text_field($_POST['mi_rff_title']);
+            $connection_mi_rff->save_location($title, $_POST['statusItem']);
+        }
+
+        $dadosLocation = $connection_mi_rff->get_all_locations();
+        if($dadosLocation){
+            echo '<table class="wp-list-table widefat">';
+            echo '<thead><tr><th>ID</th><th>Título</th><th>status</th><th>Ações</th></tr></thead>';
+            echo '<tbody>';
+            foreach($dadosLocation as $dadoLocation){
+                echo '<form method="post" action="" enctype="multipart/form-data">';
+                echo '<tr>';
+                echo '<td>'.$dadoLocation->id.'</td>';
+                echo '<td>'.$dadoLocation->title.'</td>';
+                echo '<td>'.$dadoLocation->statusItem.'</td>';
+                echo '<td id="down_rff_bts"><input type="submit" class="down_rff_edit" id="edit" name="edit" value="Editar" /><input type="submit" id="excluir_item" name="excluir_item" value="Excluir" /></td>';
+                echo '</tr>';
+                echo '</form>';
+            }
+            echo '</tbody>';
+            echo '</table>';
+        }
+    ?>
+    <div class="wrap" style="position:relative;">
+        <h3>Item cadastrados</h3>
+        <div class="mi_rff_bt_open" id="mi_rff_bt_open_cad_item">Cadastrar um item</div>
+        <div class="mi_rff_geral" id="mi_rff_geral_insert_item">
+            <div class="mi_rff_insert_item">
+                <h1>Cadastrar item</h1>
+                <div class="mi_rff_btclose" id="mi_rff_btclose_cad_item" title="Fechar a janela">X</div>
+                <form method="post" action="" id="mi_rff_form" enctype="multipart/form-data">
+                    <input type="text" name="orderItems" size="5" placeholder="Digite a ordem que ele deve aparecer" value="" title="Digite a ordem que ele deve aparecer" required>
+                    <input type="text" name="nome" placeholder="Digite o nome" value="" required>
+                    <!-- <input type="text" name="urlImg" placeholder="Digite a url da imagem" value=""> -->
+                    <span>
+                        <label for="urlImg">Selecionar arquivo</label>
+                        <input type="file" name="urlImg" id="urlImg" accept="image/*" required>
+                    </span>
+                    <input type="text" name="urlLink" placeholder="Digite a url do link" value="" required>
+                    <input type="text" name="altText" placeholder="Digite o texto que deve aparecer ao passar o mouse por cima da imagem" title="Digite o texto que deve aparecer ao passar o mouse por cima da imagem" value="" required>
+                    <select name="statusItem" id="statusItem" style="<?php echo $style_select; ?>" required>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
+                    <select name="locationId" id="locationId" style="<?php echo $style_select; ?>" required>
+                        <?php
+                            if($dadosLocation){
+                                foreach($dadosLocation as $dadosL){
+                                    echo '<option value="'.$dadosL->id.'">'.$dadosL->title.'</option>';
+                                }
+                            }
+                        ?>
+                    </select>
+                    <input type="submit" class="mi-rff-bt-submit" id="Enviar" name="Enviar" value="Enviar">
+                </form>
+            </div>
+        </div>
     </div>
     <?php
     if(isset($_POST['Editar']) && isset($_POST['id']) && isset($_POST['nome']) && isset($_POST['urlImg']) && isset($_POST['urlLink']) && isset($_POST['altText'])){
@@ -126,8 +202,9 @@ function menuImage_rff_admin_page() {
             $urlLink = sanitize_text_field($_POST['urlLink']);
             $altText = sanitize_text_field($_POST['altText']);
             $statusItem = sanitize_text_field($_POST['statusItem']);
+            $locationId = sanitize_text_field($_POST['locationId']);
             // $connection_mi_rff->menuImage_rff_editar_dados($_POST['id'], $orderItems, $_POST['nome'], $_POST['urlImg'], $_POST['urlLink'], $_POST['altText'], $statusItem);
-            $connection_mi_rff->menuImage_rff_editar_dados($id, $orderItems, $nome, $_POST['urlImg'], $urlLink, $altText, $statusItem);
+            $connection_mi_rff->menuImage_rff_editar_dados($id, $orderItems, $nome, $_POST['urlImg'], $urlLink, $altText, $statusItem, $locationId);
             echo '<div class="notice notice-success is-dismissible"><p>Dados alterados com sucesso!</p></div>';
         }else{
             echo '<div class="notice notice-failure is-dismissible"><p>Todos os campos precisam ser preenchidos!</p></div>';
@@ -140,13 +217,14 @@ function menuImage_rff_admin_page() {
             $altText = sanitize_text_field($_POST['altText']);
             $orderItems = sanitize_text_field($_POST['orderItems']);
             $statusItem = sanitize_text_field($_POST['statusItem']);
+            $locationId = sanitize_text_field($_POST['locationId']);
             // printf($urlImg);
             $image = $upload_mi_rff->uploadImage($urlImg);
             // echo '//-----------------------------------//<br>';
             // echo $image;
             // echo '<br>........................................';
             // menuImage_rff_gravar_dados($nome, $urlImg, $urlLink, $altText);
-            $connection_mi_rff->menuImage_rff_gravar_dados($orderItems, $nome, $image, $urlLink, $altText, $statusItem);
+            $connection_mi_rff->menuImage_rff_gravar_dados($orderItems, $nome, $image, $urlLink, $altText, $statusItem, $locationId);
             echo '<div class="notice notice-success is-dismissible"><p>Dados gravados com sucesso!</p></div>';
         }else{
             echo '<div class="notice notice-failure is-dismissible"><p>Todos os campos precisam ser preenchidos!</p></div>';
