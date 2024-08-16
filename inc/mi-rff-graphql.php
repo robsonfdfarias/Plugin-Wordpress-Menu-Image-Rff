@@ -9,6 +9,69 @@ if(!defined('WPINC')){
 }
 
 //Função que registra na tabela do GraphQl
+function register_custom_table_location_in_graphql() {
+    register_graphql_object_type( 'CustomTableTypeLocation', [
+        'description' => __( 'Tabela de menu com imagem', 'your-textdomain' ),
+        'fields' => [
+            'id' => [
+                'type' => 'ID',
+                'description' => __( 'ID of the item', 'your-textdomain' ),
+            ],
+            'title' => [
+                'type' => 'String',
+                'description' => __( 'Título da localização do menu image', 'your-textdomain' ),
+            ],
+            'statusItem' => [
+                'type' => 'String',
+                'description' => __( 'Status da localização do menu image, pode ser Ativo ou Inativo', 'your-textdomain' ),
+            ],
+        ],
+    ] );
+
+    register_graphql_field( 'RootQuery', 'menuImage_rff_location', [
+        'type' => [ 'list_of' => 'CustomTableTypeLocation' ],
+        'description' => __( 'Query de consulta da tabela', 'your-textdomain' ),
+        'args' => [
+            'id' => [
+                'type' => 'ID',
+                'description' => __( 'ID of the item', 'your-textdomain' ),
+            ],
+            'title' => [
+                'type' => 'String',
+                'description' => __( 'Título da localização do menu image', 'your-textdomain' ),
+            ],
+            'statusItem' => [
+                'type' => 'String',
+                'description' => __( 'Status do item do menu image, pode ser Ativo ou Inativo', 'your-textdomain' ),
+            ],
+        ],
+        'resolve' => function( $root, $args, $context, $info ) {
+            global $wpdb;
+            // $table_name = $wpdb->prefix . 'custom_table';
+            $table_name = $wpdb->prefix . 'menuImage_rff_location';
+            $where_clauses = [];
+            if(!empty($args['id'])){
+                $where_clauses[] = $wpdb->prepare("id = %d", $args['id']);
+            }
+            if(!empty($args['title'])){
+                $where_clauses[] = $wpdb->prepare("title = %s", $args['title']);
+            }
+            if(!empty($args['statusItem'])){
+                $where_clauses[] = $wpdb->prepare("statusItem = %s", $args['statusItem']);
+            }
+            $where_sql = '';
+            if(!empty($where_clauses) && sizeof($where_clauses)>0){
+                $where_sql = 'WHERE '.implode(' AND ', $where_clauses);
+            }
+            $sql = "SELECT * FROM $table_name $where_sql";
+            $results = $wpdb->get_results( $sql );
+            return $results;
+        }
+    ] );
+}
+
+
+//Função que registra na tabela do GraphQl
 function register_custom_table_in_graphql() {
     register_graphql_object_type( 'CustomTableType', [
         'description' => __( 'Tabela de menu com imagem', 'your-textdomain' ),
@@ -41,6 +104,10 @@ function register_custom_table_in_graphql() {
                 'type' => 'String',
                 'description' => __( 'Status do item do menu image, pode ser Ativo ou Inativo', 'your-textdomain' ),
             ],
+            'locationId' => [
+                'type' => 'String',
+                'description' => __( 'Id da localização', 'your-textdomain' ),
+            ],
         ],
     ] );
 
@@ -64,6 +131,10 @@ function register_custom_table_in_graphql() {
                 'type' => 'String',
                 'description' => __( 'Status do item do menu image, pode ser Ativo ou Inativo', 'your-textdomain' ),
             ],
+            'locationId' => [
+                'type' => 'String',
+                'description' => __( 'Id da localização', 'your-textdomain' ),
+            ],
         ],
         'resolve' => function( $root, $args, $context, $info ) {
             global $wpdb;
@@ -77,7 +148,10 @@ function register_custom_table_in_graphql() {
                 $where_clauses[] = $wpdb->prepare("nome = %s", $args['nome']);
             }
             if(!empty($args['statusItem'])){
-                $where_clauses[] = $wpdb->prepare("id = %s", $args['statusItem']);
+                $where_clauses[] = $wpdb->prepare("statusItem = %s", $args['statusItem']);
+            }
+            if(!empty($args['locationId'])){
+                $where_clauses[] = $wpdb->prepare("locationId = %s", $args['locationId']);
             }
             $orderItem = '';
             if(!empty($args['orderItems'])){

@@ -1,4 +1,8 @@
-.mi-rff-bt-submit {
+#td_submit_bts input[type="submit"] {
+    padding: 10px 15px;
+}
+
+.mi-rff-bt-submit{
     padding: 10px 15px;
 }
 

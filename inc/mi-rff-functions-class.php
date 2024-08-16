@@ -44,6 +44,48 @@ class MiRffConection {
         return $results;
     }
 
+    function get_location_by_id($id){
+        global $wpdb;
+        global $table_location_mi_rff;
+        $results = $wpdb->get_results("SELECT * FROM $table_location_mi_rff WHERE id=$id");
+        return $results[0];
+    }
+
+    function edit_location($id, $title, $statusItem){
+        global $wpdb;
+        global $table_location_mi_rff;
+        $result = $wpdb->update(
+            $table_location_mi_rff,
+            array(
+                'title'=>$title,
+                'statusItem'=>$statusItem,
+            ),
+            array('id'=>$id),
+            array('%s'),
+            array('%d'),
+        );
+        if($result<=0){
+            echo '<div class="notice notice-failure is-dismissible"><p>Falha ao atualizar a localização!</p></div>';
+        }else{
+            echo '<div class="notice notice-success is-dismissible"><p>Localização atualizada com sucesso com sucesso!</p></div>';
+        }
+    }
+
+    function delete_location($id){
+        global $wpdb;
+        global $table_location_mi_rff;
+        $result = $wpdb->delete(
+            $table_location_mi_rff,
+            array('id'=>$id),
+            array('%d')
+        );
+        if($result<=0){
+            echo '<div class="notice notice-failure is-dismissible"><p>Falha ao excluir a localização!</p></div>';
+        }else{
+            echo '<div class="notice notice-success is-dismissible"><p>Localização excluída com sucesso com sucesso!</p></div>';
+        }
+    }
+
 
     /**
      * Aqui começa a tabela de itens

@@ -66,15 +66,15 @@ function mi_rff_register_core_js(){
 /***
   * includes 
   */
-if(file_exists( MI_RFF_CORE_INC.'mi-rff-shortcode.php' )){
-    require_once( MI_RFF_CORE_INC.'mi-rff-shortcode.php' );
-}
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-hook.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-hook.php' );
 }
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-graphql.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-graphql.php' );
 }
+// if(file_exists( MI_RFF_CORE_INC.'mi-rff-shortcode.php' )){
+//     require_once( MI_RFF_CORE_INC.'mi-rff-shortcode.php' );
+// }
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-functions-class.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-functions-class.php' );
 }
@@ -89,6 +89,7 @@ $upload_mi_rff = new MiRffUpload();
 register_activation_hook(__FILE__, 'menuImage_rff_install');
 register_deactivation_hook(__FILE__, 'menuImage_rff_uninstall');
 // Registrar tipos e campos no GraphQL
+add_action( 'graphql_register_types', 'register_custom_table_location_in_graphql' );
 add_action( 'graphql_register_types', 'register_custom_table_in_graphql' );
 
 
@@ -120,7 +121,7 @@ function menuImage_rff_admin_page() {
         <div class="mi_rff_bt_open" id="mi_rff_bt_open_cad_location">Cadastrar uma localização</div>
         <div class="mi_rff_geral" id="mi_rff_geral_insert_location">
             <div class="mi_rff_insert_item">
-                <h1>Cadastrar item</h1>
+                <h1>Cadastrar localização</h1>
                 <div class="mi_rff_btclose" id="mi_rff_btclose_cad_location" title="Fechar a janela">X</div>
                 <form method="post" action="" id="mi_rff_form" enctype="multipart/form-data">
                     <input type="text" name="mi_rff_title" placeholder="Digite o título" value="" required>
@@ -132,11 +133,32 @@ function menuImage_rff_admin_page() {
                 </form>
             </div>
         </div>
+        <!-- Formulário de edição da LOCALIZAÇÃO -->
+        <div class="mi_rff_geral" id="mi_rff_geral_edit_location">
+            <div class="mi_rff_insert_item">
+                <h1>Editar localização</h1>
+                <div class="mi_rff_btclose" id="mi_rff_btclose_edit_location" title="Fechar a janela">X</div>
+                <form method="post" action="" id="mi_rff_form" enctype="multipart/form-data">
+                    <input type="hidden" id="mi_rff_id_location" name="mi_rff_id_location" placeholder="Digite o título" value="" required>
+                    <input type="text" id="mi_rff_title_location" name="mi_rff_title" placeholder="Digite o título" value="" required>
+                    <select name="statusItem" id="statusItem_location" style="<?php echo $style_select; ?>" required>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
+                    <input type="submit" class="mi-rff-bt-submit" id="edit_location" name="edit_location" value="Editar">
+                </form>
+            </div>
+        </div>
     </div>
     <?php
         if(isset($_POST['cadastrar_location'])){
             $title = sanitize_text_field($_POST['mi_rff_title']);
             $connection_mi_rff->save_location($title, $_POST['statusItem']);
+        }else if(isset($_POST['edit_location'])){
+            $title = sanitize_text_field($_POST['mi_rff_title']);
+            $connection_mi_rff->edit_location($_POST['mi_rff_id_location'], $title, $_POST['statusItem']);
+        }else if(isset($_POST['excluir_location'])){
+            $connection_mi_rff->delete_location($_POST['mi_rff_id_location']);
         }
 
         $dadosLocation = $connection_mi_rff->get_all_locations();
@@ -150,7 +172,8 @@ function menuImage_rff_admin_page() {
                 echo '<td>'.$dadoLocation->id.'</td>';
                 echo '<td>'.$dadoLocation->title.'</td>';
                 echo '<td>'.$dadoLocation->statusItem.'</td>';
-                echo '<td id="down_rff_bts"><input type="submit" class="down_rff_edit" id="edit" name="edit" value="Editar" /><input type="submit" id="excluir_item" name="excluir_item" value="Excluir" /></td>';
+                echo '<input type="hidden" value="'.$dadoLocation->id.'" name="mi_rff_id_location">';
+                echo '<td id="down_rff_bts"><input type="submit" class="down_rff_edit_location" value="Editar" /><input type="submit" id="excluir_location" name="excluir_location" value="Excluir" /></td>';
                 echo '</tr>';
                 echo '</form>';
             }
@@ -192,11 +215,42 @@ function menuImage_rff_admin_page() {
                 </form>
             </div>
         </div>
+
+        <!-- Formulário de edição do ITEM -->
+        <div class="mi_rff_geral" id="mi_rff_geral_edit_item">
+            <div class="mi_rff_insert_item">
+                <h1>Cadastrar item</h1>
+                <div class="mi_rff_btclose" id="mi_rff_btclose_edit_item" title="Fechar a janela">X</div>
+                <form method="post" action="" id="mi_rff_form" enctype="multipart/form-data">
+                    <span id="mi_rff_img_edit">
+                    </span>
+                    <input type="hidden" id="item_id" name="item_id" size="5" required>
+                    <input type="number" id="orderItems_item" name="orderItems" size="5" placeholder="Digite a ordem que ele deve aparecer" value="" title="Digite a ordem que ele deve aparecer" required>
+                    <input type="text" id="nome_item" name="nome" placeholder="Digite o nome" value="" required>
+                    <input type="url" id="urlLink_item" name="urlLink" placeholder="Digite a url do link" value="" required>
+                    <input type="text" id="altText_item" name="altText" placeholder="Digite o texto que deve aparecer ao passar o mouse por cima da imagem" title="Digite o texto que deve aparecer ao passar o mouse por cima da imagem" value="" required>
+                    <select name="statusItem" id="statusItem_item" style="<?php echo $style_select; ?>" required>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
+                    <select name="locationId" id="locationId_edit" style="<?php echo $style_select; ?>" required>
+                        <?php
+                            if($dadosLocation){
+                                foreach($dadosLocation as $dadosL){
+                                    echo '<option value="'.$dadosL->id.'">'.$dadosL->title.'</option>';
+                                }
+                            }
+                        ?>
+                    </select>
+                    <input type="submit" class="mi-rff-bt-submit" id="Enviar" name="edit_item" value="Editar">
+                </form>
+            </div>
+        </div>
     </div>
     <?php
-    if(isset($_POST['Editar']) && isset($_POST['id']) && isset($_POST['nome']) && isset($_POST['urlImg']) && isset($_POST['urlLink']) && isset($_POST['altText'])){
-        if($_POST['id']!='' && $_POST['nome']!='' && $_POST['urlImg']!='' && $_POST['urlLink']!='' && $_POST['altText']!=''){
-            $id = sanitize_text_field($_POST['id']);
+    if(isset($_POST['edit_item'])){
+        if($_POST['item_id']!='' && $_POST['nome']!='' && $_POST['urlImg']!='' && $_POST['urlLink']!='' && $_POST['altText']!='' && $_POST['orderItems']!=''){
+            $id = sanitize_text_field($_POST['item_id']);
             $orderItems = sanitize_text_field($_POST['orderItems']);
             $nome = sanitize_text_field($_POST['nome']);
             $urlLink = sanitize_text_field($_POST['urlLink']);
@@ -240,27 +294,25 @@ function menuImage_rff_admin_page() {
     //mostra os dados gravados
     $dados = $connection_mi_rff->menuImage_rff_recuperar_dados();
     if ($dados) {
-        // echo '<img src="'.$dados[0]->urlImg.'" width="100">';
         echo '<h2>Dados Gravados</h2>';
         echo '<table class="wp-list-table widefat fixed striped" style="table-layout: auto !important;">';
-        echo '<thead><tr><th>ID</th><th>Ordem</th><th>Nome</th><th>Url Image</th><th>Url Link</th><th>Texto alternativo</th><th>Status</th><th>Ações</th></tr></thead>';
+        echo '<thead><tr><th>ID</th><th>Ordem</th><th>Nome</th><th>Url Image</th><th>Ações</th></tr></thead>';
         echo '<tbody>';
         foreach ($dados as $dado) {
+            $location = $connection_mi_rff->get_location_by_id($dado->locationId);
             echo '<tr>';
             echo '<form method="post" action="" enctype="multipart/form-data">';
-            echo '<td><input type="hidden" value="'.esc_html($dado->id).'" name="id" id="id" />' . esc_html($dado->id) . '</td>';
-            echo '<td><input type="text" value="' . esc_html($dado->orderItems) . '" name="orderItems" id="orderItems" size="5" placeholder="Digite a ordem que ele deve aparecer" value="" title="Digite a ordem que ele deve aparecer" /></td>';
-            echo '<td><input type="text" value="' . esc_html($dado->nome) . '" name="nome" id="nome" placeholder="Digite o nome" /></td>';
+            echo '<td>'.esc_html($dado->id) . '</td>';
+            echo '<td>' . esc_html($dado->orderItems) . '</td>';
+            echo '<td>' . esc_html($dado->nome) . '</td>';
             // echo '<td>' . esc_html($dado->urlImg) . '</td>';
-            echo '<td>' . '<img src="'.$dado->urlImg.'" class="mi-rff-img-admin"><input type="hidden" name="urlImg" id="urlImg" value="'.$dado->urlImg.'" /></td>';
-            echo '<td><input type="text" value="' . esc_html($dado->urlLink) . '" name="urlLink" id="urlLink" placeholder="Digite a url do link" /></td>';
-            echo '<td><input type="text" value="' . esc_html($dado->altText) . '" name="altText" id="altText" placeholder="Digite o texto alternativo" /></td>';
-            echo '<td><select name="statusItem" id="statusItem" style="'.$style_select.' margin-top: 0;">
-                    <option value="'.$dado->statusItem.'">-> '.$dado->statusItem.' <-</option>
-                    <option value="Ativo">Ativo</option>
-                    <option value="Inativo">Inativo</option>
-                </select></td>';
-            echo '<td><input type="submit" class="mi-rff-bt-submit" id="Editar" name="Editar" value="Editar" /><input type="submit" class="mi-rff-bt-submit" id="Excluir" name="Excluir" value="Excluir" /></td>';
+            echo '<td><img src="'.$dado->urlImg.'" class="mi-rff-img-admin"><input type="hidden" name="urlImg" id="urlImg" value="'.$dado->urlImg.'" /></td>';
+            echo '<td style="display:none;">' . esc_html($dado->urlLink) . '</td>';
+            echo '<td style="display:none;">' . esc_html($dado->altText) . '</td>';
+            echo '<td style="display:none;">'.$dado->statusItem.'</td>';
+            echo '<td id='.$location->id.' style="display:none;">'.$location->title.'</td>';
+            echo '<td style="display:none;"><input type="text" value="'.esc_html($dado->id) . '" name="id"></td>';
+            echo '<td id="td_submit_bts"><input type="submit" class="mi_rff_open_edit_item" value="Editar" /><input type="submit" class="mi-rff-bt-submit" id="Excluir" name="Excluir" value="Excluir" /></td>';
             echo '</form>';
             echo '</tr>';
         }
