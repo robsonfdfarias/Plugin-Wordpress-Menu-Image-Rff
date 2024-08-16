@@ -1,14 +1,5 @@
 <?php
-/*
-Plugin Name: Menu Image RFF
-Plugin URI:  http://exemplo.com
-Description: Cria um menu com imagens
-Version:     3.0
-Author:      Robson Ferreira de Farias
-Email: robsonfdfarias@gmail.com
-Author URI:  http://infocomrobson.com.br
-License:     GPL2
-*/
+
 
  //se chamar diretamente e não pelo wordpress, aborta
  if(!defined('WPINC')){
@@ -66,6 +57,12 @@ function mi_rff_register_core_js(){
 /***
   * includes 
   */
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-hook.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-hook.php' );
+}
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-graphql.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-graphql.php' );
+}
 // if(file_exists( MI_RFF_CORE_INC.'mi-rff-shortcode.php' )){
 //     require_once( MI_RFF_CORE_INC.'mi-rff-shortcode.php' );
 // }
@@ -76,15 +73,9 @@ if(file_exists( MI_RFF_CORE_INC.'mi-rff-upload-image.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-upload-image.php' );
 }
 
-// $connection_mi_rff = new MiRffConection();
+$connection_mi_rff = new MiRffConection();
 $upload_mi_rff = new MiRffUpload();
 
-if(file_exists( MI_RFF_CORE_INC.'mi-rff-hook.php' )){
-    require_once( MI_RFF_CORE_INC.'mi-rff-hook.php' );
-}
-if(file_exists( MI_RFF_CORE_INC.'mi-rff-graphql.php' )){
-    require_once( MI_RFF_CORE_INC.'mi-rff-graphql.php' );
-}
 //Instala a tabela na ativação do plugin e desinstala a tabela na desativação
 register_activation_hook(__FILE__, 'menuImage_rff_install');
 register_deactivation_hook(__FILE__, 'menuImage_rff_uninstall');

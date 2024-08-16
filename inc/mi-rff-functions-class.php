@@ -13,7 +13,7 @@ if(!defined('WPINC')){
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-upload-image.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-upload-image.php' );
 }
-
+global $wpdb;
 $mi_rff_upload = new MiRffUpload();
 
 $table_location_mi_rff = $wpdb->prefix . 'menuImage_rff_location';
@@ -67,7 +67,7 @@ class MiRffConection {
         if($result<=0){
             echo '<div class="notice notice-failure is-dismissible"><p>Falha ao atualizar a localização!</p></div>';
         }else{
-            echo '<div class="notice notice-success is-dismissible"><p>Localização atualizada com sucesso com sucesso!</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>Localização atualizada com sucesso!</p></div>';
         }
     }
 
