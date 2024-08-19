@@ -208,7 +208,6 @@ function menuImage_rff_admin_page() {
             $statusItem = sanitize_text_field($_POST['statusItem']);
             $locationId = sanitize_text_field($_POST['locationId']);
             $image = $upload_mi_rff->uploadImage($urlImg);
-            print_r($_FILES['urlImg']);
             $connection_mi_rff->menuImage_rff_gravar_dados($orderItems, $nome, $image, $urlLink, $altText, $statusItem, $locationId);
             echo '<div class="notice notice-success is-dismissible"><p>Dados gravados com sucesso!</p></div>';
         }else{
