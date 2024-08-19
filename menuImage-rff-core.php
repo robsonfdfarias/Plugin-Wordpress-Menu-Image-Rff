@@ -1,87 +1,31 @@
 <?php
+/**
+ * 
+ */
 
-
- //se chamar diretamente e não pelo wordpress, aborta
  if(!defined('WPINC')){
     die();
  }
 
-define('MI_RFF_CORE_INC', dirname(__FILE__).'/inc/');//caminho dos arquios php
-define('MI_RFF_DIR_IMG', dirname(__FILE__).'/img/');
-define('MI_RFF_URL_CSS', plugins_url('css/', __FILE__));// Caminho absoluto para o diretório do plugin
-define('MI_RFF_URL_JS', plugins_url('js/', __FILE__));
-
  /***
-  * Registrando o css (Backend)
-  */
-  function mi_rff_register_css(){
-    wp_enqueue_style('mi-rff-css', MI_RFF_URL_CSS.'mi-rff.css', null, time(), 'all');
- }
-
- add_action('admin_enqueue_scripts', 'mi_rff_register_css');
-
- /***
-  * Registrando o js (backend)
-  */
-function mi_rff_register_admin_js(){
-    if(!did_action('wp_enqueue_media')){
-        wp_enqueue_media();
-    }
-    wp_enqueue_script('mi-rff-js-admin', MI_RFF_URL_JS.'mi-rff-admin.js', 'jquery', time(), true);
- }
- add_action('admin_enqueue_scripts', 'mi_rff_register_admin_js');
- 
- 
- /***
-  * Registrando o css (frontend)
-  */
-  function mi_rff_register_css_core(){
-    wp_enqueue_style('mi-rff-css-core', MI_RFF_URL_CSS.'mi-rff-core.css', null, time(), 'all');
- }
-
- add_action('wp_enqueue_scripts', 'mi_rff_register_css_core');
- 
- /***
-  * Registrando o js (frontend)
-  */
-function mi_rff_register_core_js(){
-    if(!did_action('wp_enqueue_media')){
-        wp_enqueue_media();
-    }
-    wp_enqueue_script('mi-rff-js-core', MI_RFF_URL_JS.'mi-rff-core.js', 'jquery', time(), true);
- }
-
- add_action('wp_enqueue_scripts', 'mi_rff_register_core_js');
-
-
-/***
   * includes 
   */
-if(file_exists( MI_RFF_CORE_INC.'mi-rff-hook.php' )){
-    require_once( MI_RFF_CORE_INC.'mi-rff-hook.php' );
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-shortcode.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-shortcode.php' );
 }
-if(file_exists( MI_RFF_CORE_INC.'mi-rff-graphql.php' )){
-    require_once( MI_RFF_CORE_INC.'mi-rff-graphql.php' );
-}
-// if(file_exists( MI_RFF_CORE_INC.'mi-rff-shortcode.php' )){
-//     require_once( MI_RFF_CORE_INC.'mi-rff-shortcode.php' );
-// }
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-functions-class.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-functions-class.php' );
 }
 if(file_exists( MI_RFF_CORE_INC.'mi-rff-upload-image.php' )){
     require_once( MI_RFF_CORE_INC.'mi-rff-upload-image.php' );
 }
+if(file_exists( MI_RFF_CORE_INC.'mi-rff-filter.php' )){
+    require_once( MI_RFF_CORE_INC.'mi-rff-filter.php' );
+}
 
 $connection_mi_rff = new MiRffConection();
 $upload_mi_rff = new MiRffUpload();
-
-//Instala a tabela na ativação do plugin e desinstala a tabela na desativação
-register_activation_hook(__FILE__, 'menuImage_rff_install');
-register_deactivation_hook(__FILE__, 'menuImage_rff_uninstall');
-// Registrar tipos e campos no GraphQL
-add_action( 'graphql_register_types', 'register_custom_table_location_in_graphql' );
-add_action( 'graphql_register_types', 'register_custom_table_in_graphql' );
+$filterMi = new FilterMiRff();
 
 
 //////////////////////////////////////////////////
@@ -102,6 +46,7 @@ function menuImage_rff_add_admin_menu() {
 function menuImage_rff_admin_page() {
     global $connection_mi_rff;
     global $upload_mi_rff;
+    global $filterMi;
     // $connection_mi_rff->restoreData();
     $style_select = "padding: 5px 15px; padding-right: 20px; font-weight: bold; text-transform: uppercase; margin-top:-5px;";
     //
@@ -248,7 +193,6 @@ function menuImage_rff_admin_page() {
             $altText = sanitize_text_field($_POST['altText']);
             $statusItem = sanitize_text_field($_POST['statusItem']);
             $locationId = sanitize_text_field($_POST['locationId']);
-            // $connection_mi_rff->menuImage_rff_editar_dados($_POST['id'], $orderItems, $_POST['nome'], $_POST['urlImg'], $_POST['urlLink'], $_POST['altText'], $statusItem);
             $connection_mi_rff->menuImage_rff_editar_dados($id, $orderItems, $nome, $_POST['urlImg'], $urlLink, $altText, $statusItem, $locationId);
             echo '<div class="notice notice-success is-dismissible"><p>Dados alterados com sucesso!</p></div>';
         }else{
@@ -263,12 +207,8 @@ function menuImage_rff_admin_page() {
             $orderItems = sanitize_text_field($_POST['orderItems']);
             $statusItem = sanitize_text_field($_POST['statusItem']);
             $locationId = sanitize_text_field($_POST['locationId']);
-            // printf($urlImg);
             $image = $upload_mi_rff->uploadImage($urlImg);
-            // echo '//-----------------------------------//<br>';
-            // echo $image;
-            // echo '<br>........................................';
-            // menuImage_rff_gravar_dados($nome, $urlImg, $urlLink, $altText);
+            print_r($_FILES['urlImg']);
             $connection_mi_rff->menuImage_rff_gravar_dados($orderItems, $nome, $image, $urlLink, $altText, $statusItem, $locationId);
             echo '<div class="notice notice-success is-dismissible"><p>Dados gravados com sucesso!</p></div>';
         }else{
@@ -283,9 +223,33 @@ function menuImage_rff_admin_page() {
         }
     }
     //mostra os dados gravados
-    $dados = $connection_mi_rff->menuImage_rff_recuperar_dados();
-    if ($dados) {
+    // Verifica se foi aplicado um filtro usando o formulário de filtro
+    if(isset($_POST['mi_filter_form'])){
+        //Grava o filtro selecionado
+        $filterMi->save_filter($_POST['mi_rff_filter_local']);
+    }
+    //Lê o filtro gravado no arquivo de filtro, se não existir, ele cria o arquivo com o valor 0, que representa todos
+    $filtro = $filterMi->read_filter($connection_mi_rff);
         echo '<h2>Dados Gravados</h2>';
+        echo '<div>
+            <form action="" method="post">
+                <select name="mi_rff_filter_local" required>
+                    <option value="0">Todos</option>';
+                    if($dadosLocation){
+                        foreach($dadosLocation as $dadosL){
+                            echo '<option value="'.$dadosL->id.'">'.$dadosL->title.'</option>';
+                        }
+                    }
+        echo '  </select>
+                <input type="submit" name="mi_filter_form" value="Filtrar">';
+        if($filtro['val']!=null){
+            $localizacaoMi = $connection_mi_rff->get_location_by_id($filtro['val']);
+            echo '  <span>  Você pesquisou por: <strong>'.$localizacaoMi->title.'</strong></span>';
+        }
+        echo '</form>
+        </div>';
+        $dados = $filtro['itemDados'];
+    if ($dados) {
         echo '<table class="wp-list-table widefat fixed striped" style="table-layout: auto !important;">';
         echo '<thead><tr><th>ID</th><th>Ordem</th><th>Nome</th><th>Url Image</th><th>Ações</th></tr></thead>';
         echo '<tbody>';
@@ -296,7 +260,6 @@ function menuImage_rff_admin_page() {
             echo '<td>'.esc_html($dado->id) . '</td>';
             echo '<td>' . esc_html($dado->orderItems) . '</td>';
             echo '<td>' . esc_html($dado->nome) . '</td>';
-            // echo '<td>' . esc_html($dado->urlImg) . '</td>';
             echo '<td><img src="'.$dado->urlImg.'" class="mi-rff-img-admin"><input type="hidden" name="urlImg" id="urlImg" value="'.$dado->urlImg.'" /></td>';
             echo '<td style="display:none;">' . esc_html($dado->urlLink) . '</td>';
             echo '<td style="display:none;">' . esc_html($dado->altText) . '</td>';

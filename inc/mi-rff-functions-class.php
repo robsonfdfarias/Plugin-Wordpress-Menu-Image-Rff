@@ -121,6 +121,14 @@ class MiRffConection {
         return $results;
     }
 
+    //recupera dados por id da localização
+    function menuImage_rff_recupera_por_id_localizacao($id){
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'menuImage_rff';
+        $results = $wpdb->get_results("SELECT * FROM $table_name WHERE locationId=$id");
+        return $results;
+    }
+
     //excluir o registro
     function menuImage_rff_excluir_dados($id, $img) {
         global $wpdb;

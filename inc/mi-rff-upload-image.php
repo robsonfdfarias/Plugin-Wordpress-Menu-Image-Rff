@@ -31,7 +31,7 @@ class MiRffUpload{
 
         // Verifica o tipo de arquivo e o tamanho, se necessário
         $file_type = wp_check_filetype($uploadedfile['name']);
-        if ($file_type['ext'] !== 'jpg' && $file_type['ext'] !== 'jpeg' && $file_type['ext'] !== 'png' && $file_type['ext'] !== 'gif') {
+        if ($file_type['ext'] !== 'jpg' && $file_type['ext'] !== 'jpeg' && $file_type['ext'] !== 'png' && $file_type['ext'] !== 'gif' && $file_type['ext'] !== 'svg') {
             echo "<p>Tipo de arquivo não permitido. Apenas imagens JPG, JPEG, PNG e GIF são permitidas.</p>";
             return;
         }
